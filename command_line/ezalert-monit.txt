@@ -1,0 +1,24 @@
+
+https://ezalert.me
+
+You can use EZAlert.me to transport Monit alerts.
+You need to create a script like the following one:
+
+/opt/ezalert-xyz.sh:
+---------------------------------------------------------
+#!/bin/bash
+
+# Replace YY-YYYYYYYYYYYY with your channel API Key
+curl "https://ezalert.me/v1/sendAlert?apikey=YY-YYYYYYYYYYYY&text=Monit-Problem+with+process+xyz"
+---------------------------------------------------------
+
+Then change your Monit config file to call ezalert.sh script on process failure.
+Example:
+
+check process xyz with pidfile /var/run/xyz.pid
+  start program = "/etc/init.d/xyz start" with timeout 60 seconds
+  stop program = "/etc/init.d/xyz stop"
+  if does not exist then exec "/opt/ezalert-xyz.sh"
+
+
+
