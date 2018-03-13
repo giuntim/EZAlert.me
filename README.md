@@ -7,12 +7,12 @@ Supported platforms: Telegram, Facebook Messenger, Skype.
 
 This repo contains samples for the following platforms/languages:
 
-- PHP
-- Python
-- Unix command line:
---- CURL
---- wget
---- fetch (for FreeBSD)
+- php: various alert sending PHP samples
+- python: sample of alert sending in Python (for both Pyton 2.xx and 3.xx)
+- perl: sample of alert sending in Perl
+- command_line: various samples to use on Unix command line (Linux, Bsd, OsX) using CURL, wget, fetch 
+- contrib: user-contributes scripts (Zabbix integration)
+
 
 Get more info about EZAlert.me at: https://ezalert.me
 
