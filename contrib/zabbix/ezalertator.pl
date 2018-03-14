@@ -1,21 +1,18 @@
 #!/usr/bin/perl
 
-#
-# Perl script to send Zabbix alerts to EZAlert.me channel
-#
-
 # Shell script / Perl Program - made by Phil
 # 11/03/2018    1.00    (yesterday Ralf Waldmann died) First Coding.
 # 13/03/2018    1.10    added url_encode and trimmed leading blanks.
+# 14/03/2018    1.20    added retry on CURL failure.
 
-my $VERSION="1.10";
+my $VERSION="1.20";
 my $appname="ezalertator";
 
 use strict;
 use Getopt::Std;
 use Sys::Hostname;
 use Data::Dumper qw(Dumper); 
-
+#use URL::Encode;
 
 #############################################################
 # Define the ENVIRONMENT
@@ -45,6 +42,8 @@ my $msgstring="";
 #
 my $logfile=">>/tmp/ezalertator.log";
 my $dt = "";
+my $i=0;
+my $ipu=1;
 my @res = 0;
 
 #############################################################
@@ -52,9 +51,9 @@ my @res = 0;
 #############################################################
 if ($ENV eq "TEST") {
     print "TEST Env\n";
-    $logfile=">>./ezalertator.log";
+    $logfile=">>./tmp/ezalertator.log";
 } elsif ($ENV eq "PROD") {
-    $logfile=">>/tmp/ezalertator.log";
+    $logfile=">>/var/log/zabbix/ezalertator.log";
 } else {
     print "Non conosco questo environment($ENV)\nExiting...\n";
     exit(1);
@@ -99,18 +98,33 @@ $msgstring =~ s/^\s+//;
 
 PrintIT("START of alert");
 
-PrintIT("KEY $keystring") if($ftest);
-
-PrintIT("MSG $msgstring") if($ftest);
-
 PrintIT("ORIGINAL  : curl \"https://ezalert.me/v1/sendAlert?\" -d \"apikey=$keystring\" -D \"text=$msgstring\"");
 $msgstring = url_encode($msgstring);
 
 PrintIT("URLENCODED: curl \"https://ezalert.me/v1/sendAlert?\" -d \"apikey=$keystring\" -D \"text=$msgstring\"");
 
-@res=`curl "https://ezalert.me/v1/sendAlert?" -d "apikey=$keystring" -d "text=$msgstring"`;
+while(1 eq 1) {
 
-PrintIT(@res);
+    PrintIT("Attempt no. $ipu");
+
+    @res=`curl "https://ezalert.me/v1/sendAlert?" -d "apikey=$keystring" -d "text=$msgstring"`;
+
+    PrintIT(@res);
+
+    if($res[0] =~ /OK/) {
+        PrintIT("Success! Alert sent.");
+        last;
+    };
+
+    PrintIT("FAILURE! Try again.");
+
+    $i++; $ipu++;
+
+    if($i eq 3) {
+        PrintIT("Give up. Too many errors.");
+        exit 1;
+    }
+}
 
 PrintIT("END of alert");
 
