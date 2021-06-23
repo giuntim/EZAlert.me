@@ -1,0 +1,128 @@
+/*
+    This sketch demonstrates how to set use a HTTP client
+    to send alerts via EZAlert.me. 
+    With EZAlert.me your Arduino board cand send you alerts via
+    Telegram, Skype, Facebook Messenger, Slack, ...     
+    What you need:
+    - An Arduino board with WiFi capability (like ESP8266)
+    - An EZAlert.me API key (see https://ezalert.me )
+*/
+
+
+// NOTE: use correct WiFi lib for your board
+// #include <WiFi.h>
+#include <ESP8266WiFi.h>
+
+// ******* WiFi Connection Configuration here *******
+char* ssid = "REPLACE_WITH_YOUR_SSID";
+char* password = "REPLACE_WITH_YOUR_PASSWORD";
+
+
+// Send demo alert every 60 seconds 
+unsigned long timerDelay = 60*1000;
+unsigned long lastTime = 0;
+
+
+
+void setup() {
+
+  Serial.begin(115200); 
+  Serial.println("Start");
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting");
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
+
+}
+
+
+void loop() {
+
+    if ((millis() - lastTime) > timerDelay) {
+        // Check WiFi connection status, if connected send alert
+        if(WiFi.status()== WL_CONNECTED) {          
+            Serial.println("Sending alert");
+            
+            String alert=F("This is an alert! ");
+            alert+=millis(); // Add millisecond to alert string (just to send a different alert every time)
+
+            sendAlert(alert);            
+        }
+        lastTime = millis();
+    }
+
+}
+
+
+
+/**
+* This function sends an alert via EZAlert.Me
+* NOTE: you need to set up your EZAlert.me API Key 
+*
+**/
+int sendAlert(String text) {
+
+ // ******* EZALert.me API Key here *******
+ String ezalert_ApiKey = "PUT YOUR EZALERT.ME API KEY HERE";
+ 
+
+ const char* servername = "ezalert.me";
+ String line1=F("GET /v1/sendAlert?apikey=")+String(ezalert_ApiKey)+F("&text=")+urlencode(text)+F(" HTTP/1.1");
+ String line2=F("Host: ezalert.me");
+ WiFiClient client; 
+ if (client.connect(servername, 80)) {
+      
+      // Make a HTTP request:
+      client.println(line1);
+      client.println(line2);
+      client.println();
+      
+      return 1;
+ }  
+ return 0;
+}
+
+
+/**
+* Urlencoding utility
+**/
+String urlencode(String str)
+{
+    String encodedString="";
+    char c;
+    char code0;
+    char code1;
+    char code2;
+    for (int i =0; i < str.length(); i++){
+      c=str.charAt(i);
+      if (c == ' '){
+        encodedString+= '+';
+      } else if (isalnum(c)){
+        encodedString+=c;
+      } else{
+        code1=(c & 0xf)+'0';
+        if ((c & 0xf) >9){
+            code1=(c & 0xf) - 10 + 'A';
+        }
+        c=(c>>4)&0xf;
+        code0=c+'0';
+        if (c > 9){
+            code0=c - 10 + 'A';
+        }
+        code2='\0';
+        encodedString+='%';
+        encodedString+=code0;
+        encodedString+=code1;
+        //encodedString+=code2;
+      }
+      yield();
+    }
+    return encodedString;    
+}
+
+
